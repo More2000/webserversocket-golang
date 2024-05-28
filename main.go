@@ -4,8 +4,10 @@ import (
     "log"
     "net/http"
     "sync"
+	"fmt"
     "encoding/json"
     "github.com/gorilla/websocket"
+	"bytes"
 )
 
 type JsonMessage struct {
@@ -165,9 +167,55 @@ func main() {
 		log.Println("Params:")
 		log.Println(cliente.params)
 
-		cliente.On("saludo", func(params map[string]interface{}) {
-			log.Println("Evento saludo params:", params)
-			cliente.Emit("respuesta", map[string]interface{}{"mensaje": "Hola aa"})
+		cliente.On("temperatura", func(params map[string]interface{}) {
+			log.Println("Evento temperatura params:", params)
+			log.Println("temperatura:", params["temperatura"])
+
+			temperatura, ok := params["temperatura"].(string)
+			if !ok {
+				fmt.Println("Error: temperatura no es una cadena")
+				return
+			}
+			timestamp, ok := params["timestamp"].(int)
+			if !ok {
+				fmt.Println("Error: timestamp no es un numero")
+				return
+			}
+
+
+
+			url := "http://localhost:5000/webhook"
+			data := map[string]string{
+				"temperatura":  temperatura,
+				"timestamp": timestamp,
+			}
+
+			JSON, err := json.Marshal(data)
+			if err != nil {
+				fmt.Println("Error convirtiendo a JSON:")
+				fmt.Println(err)
+				return
+			}
+
+			req, err := http.NewRequest("POST", url, bytes.NewBuffer(JSON))
+			if err != nil {
+				fmt.Println("Error creando el request:")
+				fmt.Println(err)
+				return
+			}
+
+			req.Header.Set("Content-Type", "application/json")
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			if err != nil {
+				fmt.Println("Error al enviar al webhoock")
+				fmt.Println( err)
+				return
+			}
+			defer resp.Body.Close()
+
+
+			cliente.Emit("change_temperatura", map[string]interface{}{"temperatura": params["temperatura"], "timestamp": params["timestamp"]})
 		})
 	})
 
