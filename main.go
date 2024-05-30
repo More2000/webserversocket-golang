@@ -8,6 +8,8 @@ import (
     "encoding/json"
     "github.com/gorilla/websocket"
 	"bytes"
+	// IMPORTE ESTO PARA ARREGLAR EL INT A STRING DE TIMESTAMP
+
 )
 
 type JsonMessage struct {
@@ -176,7 +178,7 @@ func main() {
 				fmt.Println("Error: temperatura no es una cadena")
 				return
 			}
-			timestamp, ok := params["timestamp"].(int)
+			timestamp, ok := params["timestamp"].(string)
 			if !ok {
 				fmt.Println("Error: timestamp no es un numero")
 				return
@@ -187,6 +189,7 @@ func main() {
 			url := "http://localhost:5000/webhook"
 			data := map[string]string{
 				"temperatura":  temperatura,
+				// AGREGUÉ "strconv.Itoa" para convertir un INT a string
 				"timestamp": timestamp,
 			}
 
