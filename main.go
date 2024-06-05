@@ -176,9 +176,9 @@ func main() {
 				fmt.Println("Error: temperatura no es una cadena")
 				return
 			}
-			timestamp, ok := params["timestamp"].(int)
+			timestamp, ok := params["timestamp"].(string)
 			if !ok {
-				fmt.Println("Error: timestamp no es un numero")
+				fmt.Println("Error: timestamp no es una cadena")
 				return
 			}
 
