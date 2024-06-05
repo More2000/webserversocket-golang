@@ -43,6 +43,9 @@ func NuevoServidorWebSocket() *WebSocketServer {
 	}
 }
 
+var clients = make(map[*Cliente]bool)
+
+
 func (server *WebSocketServer) Ejecutar() {
 	for {
 		select {
@@ -87,6 +90,9 @@ func (server *WebSocketServer) ManejarConexiones(w http.ResponseWriter, r *http.
 	}
 
 	cliente := &Cliente{conn: conn, send: make(chan []byte, 256), server: server, eventHandlers: make(map[string][]func(map[string]interface{})), params: params}
+
+	clients[cliente] = true
+
 	server.register <- cliente
 
 	go cliente.escribirMensajes()
@@ -180,7 +186,7 @@ func main() {
 			}
 			timestamp, ok := params["timestamp"].(string)
 			if !ok {
-				fmt.Println("Error: timestamp no es un numero")
+				fmt.Println("Error: timestamp no es una cadena")
 				return
 			}
 
@@ -209,6 +215,8 @@ func main() {
 
 			req.Header.Set("Content-Type", "application/json")
 			client := &http.Client{}
+			
+
 			resp, err := client.Do(req)
 			if err != nil {
 				fmt.Println("Error al enviar al webhoock")
@@ -218,7 +226,15 @@ func main() {
 			defer resp.Body.Close()
 
 
-			cliente.Emit("change_temperatura", map[string]interface{}{"temperatura": params["temperatura"], "timestamp": params["timestamp"]})
+			//cliente.Emit("change_temperatura", map[string]interface{}{"temperatura": params["temperatura"], "timestamp": params["timestamp"]})
+
+			for clientEm := range server.clientes {
+				fmt.Println(clientEm)
+				clientEm.Emit("change_temperatura", map[string]interface{}{"temperatura": params["temperatura"], "timestamp": params["timestamp"]})
+
+			}
+
+
 		})
 	})
 
